@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frame2Web - The Digital Forge</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000000;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        #webgl-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            outline: none;
+            z-index: 0; /* Ensure canvas is behind preloader */
+        }
+
+        #scroll-container {
+            width: 100%;
+            height: 800vh; /* Adjusted for all scenes */
+            position: relative;
+            z-index: 1;
+        }
+
+        .content-section {
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .section-heading {
+            font-weight: 900;
+            line-height: 1.1;
+            opacity: 0; /* Controlled by GSAP */
+        }
+        
+        .slogan-heading {
+             font-size: clamp(2.5rem, 8vw, 5rem);
+             font-weight: 700;
+             opacity: 0;
+        }
+
+        .section-subheading {
+            max-width: 600px;
+            font-size: 1.25rem;
+            opacity: 0; /* Controlled by GSAP */
+        }
+        
+        .action-button {
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            opacity: 0;
+        }
+        .action-button:hover {
+            background-color: #00ffff;
+            color: #000000;
+        }
+
+        #contact-form-container {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        /* Preloader Styles */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.8s ease-out;
+        }
+
+        #preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .preloader-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 10px;
+            transform: rotate(45deg);
+        }
+
+        .grid-cell {
+            width: 40px;
+            height: 40px;
+            background-color: #00ffff;
+            opacity: 0;
+            animation: grid-reveal 1.5s infinite ease-in-out;
+        }
+
+        .grid-cell:nth-child(1) { animation-delay: 0.0s; }
+        .grid-cell:nth-child(2) { animation-delay: 0.1s; }
+        .grid-cell:nth-child(3) { animation-delay: 0.2s; }
+        .grid-cell:nth-child(4) { animation-delay: 0.1s; }
+        .grid-cell:nth-child(5) { animation-delay: 0.2s; }
+        .grid-cell:nth-child(6) { animation-delay: 0.3s; }
+        .grid-cell:nth-child(7) { animation-delay: 0.2s; }
+        .grid-cell:nth-child(8) { animation-delay: 0.3s; }
+        .grid-cell:nth-child(9) { animation-delay: 0.4s; }
+
+        @keyframes grid-reveal {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        #loading-text {
+            color: #00ffff;
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            letter-spacing: 0.1em;
+            opacity: 0;
+            animation: text-fade 1.5s infinite alternate;
+        }
+
+        @keyframes text-fade {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        #preloader-logo {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            color: #00ffff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+            animation: logo-glow 2s infinite alternate;
+        }
+
+        @keyframes logo-glow {
+            0% { text-shadow: 0 0 10px rgba(0, 255, 255, 0.4); }
+            100% { text-shadow: 0 0 25px rgba(0, 255, 255, 0.9); }
+        }
+
+        /* Form specific styles for feedback */
+        .form-feedback {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.3s ease-in-out;
+        }
+        .form-feedback.success {
+            background-color: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            opacity: 1;
+        }
+        .form-feedback.error {
+            background-color: rgba(255, 0, 0, 0.2);
+            color: #ff0000;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="preloader">
+        <h1 id="preloader-logo">FRAME2WEB</h1>
+        <div class="preloader-grid">
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+        </div>
+        <p id="loading-text">Forging your digital vision...</p>
+    </div>
+
+    <div id="scroll-container">
+        <section class="content-section">
+            <div id="title-container" class="text-center">
+                <h1 class="text-5xl md:text-7xl font-semibold">
+                    <span id="welcome-span" class="opacity-0">Welcome</span>
+                    <span id="to-span" class="opacity-0 ml-4">to</span>
+                </h1>
+                <h1 id="frame2web-title" class="section-heading text-6xl md:text-8xl font-black uppercase">FRAME2WEB</h1>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2 id="slogan1" class="slogan-heading">we design everything</h2>
+        </section>
+
+        <section class="content-section">
+            <h2 id="slogan2" class="slogan-heading">your vision, our innovation</h2>
+        </section>
+
+        <section class="content-section">
+            <h2 id="title-blueprint" class="section-heading text-5xl md:text-7xl">The Blueprint</h2>
+            <p id="sub-blueprint" class="section-subheading">Every masterpiece begins with a plan. We architect robust, scalable solutions for web development and secure your assets with meticulous penetration testing.</p>
+            <button id="btn-blueprint" class="action-button">Learn More</button>
+        </section>
+
+        <section class="content-section">
+            <h2 id="title-forge" class="section-heading text-5xl md:text-7xl">The Forge</h2>
+            <p id="sub-forge" class="section-subheading">Ideas are forged into reality. With cutting-edge technology, we render breathtaking 3D videos and build the core of your digital presence.</p>
+            <button id="btn-forge" class="action-button">Learn More</button>
+        </section>
+
+        <section class="content-section">
+            <h2 id="title-polish" class="section-heading text-5xl md:text-7xl">The Polish</h2>
+            <p id="sub-polish" class="section-subheading">Perfection is in the details. We refine, optimize, and edit every pixel and every frame until your project shines with unparalleled quality.</p>
+            <button id="btn-polish" class="action-button">Learn More</button>
+        </section>
+
+        <section class="content-section">
+            <div id="contact-form-container">
+                <h2 class="text-4xl font-bold mb-6">Create With Us</h2>
+                <p class="text-gray-400 mb-8">Tell us about your vision, and we'll help bring it to life. We'll get back to you within 24-48 hours.</p>
+                <form id="contact-form">
+                    <input type="text" id="name" name="name" placeholder="Your Name" class="w-full p-3 mb-4 bg-transparent border-b-2 border-gray-500 focus:border-cyan-400 outline-none transition-colors" required>
+                    <input type="email" id="email" name="email" placeholder="Your Email" class="w-full p-3 mb-4 bg-transparent border-b-2 border-gray-500 focus:border-cyan-400 outline-none transition-colors" required>
+                    <textarea id="message" name="message" placeholder="Your Vision" rows="3" class="w-full p-3 mb-4 bg-transparent border-b-2 border-gray-500 focus:border-cyan-400 outline-none transition-colors" required></textarea>
+                    <button type="submit" class="w-full py-3 bg-cyan-500 font-bold rounded-lg hover:bg-cyan-400 transition-colors">Begin the Journey</button>
+                </form>
+                <div id="form-feedback" class="form-feedback"></div>
+            </div>
+        </section>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
+                "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import gsap from 'gsap';
+        import ScrollTrigger from 'gsap/ScrollTrigger';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        // --- Preloader Logic ---
+        const preloader = document.getElementById('preloader');
+        const webglCanvas = document.getElementById('webgl-canvas');
+
+        // Hide main content initially
+        document.getElementById('scroll-container').style.display = 'none';
+        webglCanvas.style.display = 'none';
+
+        window.addEventListener('load', () => {
+            // Once all assets are loaded, fade out preloader and show content
+            gsap.to(preloader, {
+                opacity: 0,
+                duration: 0.8,
+                ease: "power2.out",
+                onComplete: () => {
+                    preloader.classList.add('hidden');
+                    document.getElementById('scroll-container').style.display = 'block';
+                    webglCanvas.style.display = 'block';
+                    // Re-initialize ScrollTrigger after content is visible
+                    ScrollTrigger.refresh();
+                }
+            });
+        });
+
+        // --- Contact Form Logic ---
+        const contactForm = document.getElementById('contact-form');
+        const formFeedback = document.getElementById('form-feedback');
+
+        contactForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            // Clear previous feedback
+            formFeedback.classList.remove('success', 'error');
+            formFeedback.textContent = '';
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const message = document.getElementById('message').value.trim();
+
+            if (!name || !email || !message) {
+                formFeedback.classList.add('error');
+                formFeedback.textContent = 'Please fill in all required fields.';
+                return;
+            }
+
+            // Simple email validation (more robust validation needed for production)
+            if (!/\S+@\S+\.\S+/.test(email)) {
+                formFeedback.classList.add('error');
+                formFeedback.textContent = 'Please enter a valid email address.';
+                return;
+            }
+
+            // Simulate form submission
+            // In a real application, you would send this data to a backend server.
+            // Example using Fetch API:
+            /*
+            try {
+                const response = await fetch('/api/contact', { // Replace with your actual API endpoint
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, message }),
+                });
+
+                if (response.ok) {
+                    formFeedback.classList.add('success');
+                    formFeedback.textContent = 'Your vision has been sent! We\'ll get back to you soon.';
+                    contactForm.reset(); // Clear the form
+                } else {
+                    const errorData = await response.json();
+                    formFeedback.classList.add('error');
+                    formFeedback.textContent = errorData.message || 'Oops! Something went wrong. Please try again.';
+                }
+            } catch (error) {
+                formFeedback.classList.add('error');
+                formFeedback.textContent = 'Network error. Please check your connection and try again.';
+                console.error('Form submission error:', error);
+            }
+            */
+
+            // For demonstration purposes:
+            formFeedback.classList.add('success');
+            formFeedback.textContent = 'Your vision has been sent! We\'ll get back to you soon.';
+            contactForm.reset(); // Clear the form fields after successful submission
+
+            // Optional: Hide feedback after a few seconds
+            setTimeout(() => {
+                formFeedback.classList.remove('success', 'error');
+                formFeedback.textContent = '';
+            }, 5000);
+        });
+
+
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+        const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector('#webgl-canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+
+        // --- Post-processing ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.5;
+        bloomPass.radius = 0;
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- 3D Objects ---
+        const particleCount = 5000;
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3 + 0] = (Math.random() - 0.5) * 10;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+        }
+        const particlesGeometry = new THREE.BufferGeometry();
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particlesMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.02, sizeAttenuation: true, transparent: true, opacity: 0.5 });
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        const icosahedronGeometry = new THREE.IcosahedronGeometry(1, 0);
+        const wireframeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ffff, wireframe: true, emissive: 0x00ffff, emissiveIntensity: 1 });
+        const wireframeObject = new THREE.Mesh(icosahedronGeometry, wireframeMaterial);
+        wireframeObject.visible = false;
+        scene.add(wireframeObject);
+        
+        const solidMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500, metalness: 0.8, roughness: 0.2, emissive: 0xffa500, emissiveIntensity: 0 });
+        const solidObject = new THREE.Mesh(icosahedronGeometry, solidMaterial);
+        solidObject.visible = false;
+        scene.add(solidObject);
+
+        const finalMaterial = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.1, roughness: 0, transmission: 1, thickness: 0.5, ior: 2.33 });
+        const finalObject = new THREE.Mesh(icosahedronGeometry, finalMaterial);
+        finalObject.visible = false;
+        scene.add(finalObject);
+
+        // --- Main Scroll Animation ---
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: "#scroll-container",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1
+            }
+        });
+
+        // Scene 0: Staggered Welcome
+        tl.addLabel("scene0")
+          .to("#welcome-span", { opacity: 1, duration: 0.2 }, "scene0")
+          .to("#to-span", { opacity: 1, duration: 0.2 }, "scene0+=0.2")
+          .fromTo("#frame2web-title", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3 }, "scene0+=0.4")
+          .to(["#welcome-span", "#to-span", "#frame2web-title"], { opacity: 0, y: -50, duration: 0.4, stagger: 0.1 }, "scene0+=0.6");
+
+        // Scene 1: Slogan 1
+        tl.addLabel("scene1")
+          .fromTo("#slogan1", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.4 }, "scene1")
+          .to(particles.rotation, { y: Math.PI, x: 0, duration: 1 }, "scene1")
+          .to("#slogan1", { opacity: 0, y: -50, duration: 0.4 }, "scene1+=0.6");
+
+        // Scene 2: Slogan 2
+        tl.addLabel("scene2")
+          .fromTo("#slogan2", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.4 }, "scene2")
+          .to(particles.rotation, { y: Math.PI * 2, x: Math.PI, duration: 1 }, "scene2")
+          .to("#slogan2", { opacity: 0, y: -50, duration: 0.4 }, "scene2+=0.6");
+
+        // Scene 3: The Blueprint
+        tl.addLabel("scene3")
+          .to(particles.material.color, { r: 0, g: 1, b: 1, duration: 1 }, "scene3")
+          .to(bloomPass, { strength: 2.5, duration: 1 }, "scene3")
+          .set(wireframeObject, { visible: true }, "scene3")
+          .from(wireframeObject.scale, { x: 0, y: 0, z: 0, duration: 1 }, "scene3")
+          .to(wireframeObject.rotation, { y: Math.PI * 2, duration: 1 }, "scene3")
+          .fromTo(["#title-blueprint", "#sub-blueprint", "#btn-blueprint"], { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1 }, "scene3")
+          .to(["#title-blueprint", "#sub-blueprint", "#btn-blueprint"], { opacity: 0, y: -50, duration: 0.4, stagger: 0.1 }, "scene3+=0.6");
+
+        // Scene 4: The Forge
+        tl.addLabel("scene4")
+          .set(wireframeObject, { visible: false }, "scene4")
+          .set(solidObject, { visible: true }, "scene4")
+          .from(solidObject.scale, { x: 0, y: 0, z: 0, duration: 1 }, "scene4")
+          .to(particles.material.color, { r: 1, g: 0.65, b: 0, duration: 1 }, "scene4")
+          .to(solidMaterial, { emissiveIntensity: 2, duration: 1 }, "scene4")
+          .to(solidObject.rotation, { y: Math.PI * 2, duration: 1 }, "scene4")
+          .fromTo(["#title-forge", "#sub-forge", "#btn-forge"], { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1 }, "scene4")
+          .to(["#title-forge", "#sub-forge", "#btn-forge"], { opacity: 0, y: -50, duration: 0.4, stagger: 0.1 }, "scene4+=0.6");
+
+        // Scene 5: The Polish
+        tl.addLabel("scene5")
+          .set(solidObject, { visible: false }, "scene5")
+          .set(finalObject, { visible: true }, "scene5")
+          .from(finalObject.scale, { x: 0, y: 0, z: 0, duration: 1 }, "scene5")
+          .to(particles.material.color, { r: 1, g: 1, b: 1, duration: 1 }, "scene5")
+          .to(bloomPass, { strength: 1.0, duration: 1 }, "scene5")
+          .to(solidMaterial, { emissiveIntensity: 0, duration: 0.1 }, "scene5")
+          .to(finalObject.rotation, { y: Math.PI * 2, duration: 1 }, "scene5")
+          .fromTo(["#title-polish", "#sub-polish", "#btn-polish"], { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1 }, "scene5")
+          .to(["#title-polish", "#sub-polish", "#btn-polish"], { opacity: 0, y: -50, duration: 0.4, stagger: 0.1 }, "scene5+=0.6");
+
+        // Scene 6: The Invitation
+        tl.addLabel("scene6")
+          .to(finalObject.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 1 }, "scene6")
+          .to(finalObject.position, { z: -5, duration: 1 }, "scene6")
+          .to(particles.material, { opacity: 0.1, duration: 1 }, "scene6")
+          .from("#contact-form-container", { opacity: 0, y: 100, duration: 0.5 }, "scene6+=0.2");
+
+        // --- Render Loop ---
+        const clock = new THREE.Clock();
+        function animate() {
+            const elapsedTime = clock.getElapsedTime();
+            particles.rotation.y = elapsedTime * 0.05;
+            composer.render();
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        // --- Handle Window Resizing ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
